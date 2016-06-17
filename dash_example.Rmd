@@ -1,0 +1,188 @@
+---
+title: "Flights from New York City"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: yeti
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(nycflights13)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+```
+
+
+Overview 
+=============================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Top Destinations
+
+```{r prep_barchart}
+
+barchart_data <- flights %>% group_by(dest, origin) %>%
+	summarise(`Number of Departing Flights` = n()) %>%
+	ungroup() %>% 
+	spread(key = origin, value = `Number of Departing Flights`, fill = 0) %>% 
+	arrange(desc(EWR + JFK + LGA)) %>%
+	mutate(Destination = factor(dest, levels = rev(dest))) %>% 
+	head(20) %>% 
+	gather(key = 'Origin', value = `Number of Departing Flights`, EWR:LGA) %>%
+	select(-dest)
+
+```
+
+
+```{r make_barchart}
+
+p <- barchart_data %>% 
+	ggplot() +
+	aes(x = Destination, y = `Number of Departing Flights`) +
+	geom_bar(stat = 'identity') + # add a position = 'fill' arg to make 100% bars. 
+	aes(fill = Origin) 
+
+
+
+# feel free to uncomment the code below to make a few visual tweaks
+p <- p + coord_flip() +
+	theme_minimal()
+
+p
+
+```
+
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Highest-Volume Carrier This Year
+
+```{r valbox 1}
+
+top_carrier <- flights %>% 
+	group_by(carrier) %>%
+	summarise(n = n()) %>%
+	arrange(desc(n)) %>%
+	head(1) 
+
+valueBox(value = paste0(top_carrier$carrier, ': ', prettyNum(top_carrier$n, big.mark = ','), ' flights.'))
+
+```
+
+### Most On-Time Major Carrier This Year
+
+```{r valbox 2}
+
+on_time <- flights %>%
+	group_by(carrier) %>%
+	summarise(delay = mean(arr_delay, na.rm = T),
+			  n = n()) %>%
+	filter(n > 10000) %>%
+	arrange(delay) %>%
+	head(1)
+
+valueBox(value = paste0(on_time$carrier, ': ', round(on_time$delay,1), ' min late'),color = 'success')
+
+```
+
+### Customer Experience
+
+The first code block creates a summary table in which the Origin column gives the NY airport of departure, the Destination column gives the destination airport, and Number of Departing Flights is exactly what you'd expect. All the operations used there are from `dplyr` and `tidyr`. 
+
+The one subtlety is in transforming Destination into a "factor" variable with levels sorted by the number of flights to that destination. That operation is the standard way to **sort** your plots in ggplot2. 
+
+It's instructive to step through the various lines of constructing the plot. 
+
+Managing Delays {.storyboard}
+=============================
+
+### Flights tend to be delayed most in the summer, suggesting that volume more than weather is the primary determinant of delays. 
+
+```{r prep_linechart}
+
+linechart_data <- flights %>% 
+		group_by(month) %>%
+		summarise(`Arrival` = mean(arr_delay, na.rm = T),
+				  `Departure` = mean(dep_delay, na.rm = T),
+				  n = n()) %>%
+		mutate(month = month.name[month],
+		   month = factor(month, levels = month)) %>%
+		gather(key = `Arrival or Departure`, value = delay, Arrival:Departure) 
+
+```
+
+
+```{r make_linechart, fig.width=10}
+
+p <- linechart_data %>% 
+	ggplot() + 
+	aes(x = month, y = delay) +
+	geom_point() +
+	geom_path() + 
+	aes(group = `Arrival or Departure`) + 
+	aes(color = `Arrival or Departure`)
+	
+
+# feel free to uncomment the code below to make a few visual tweaks
+p <- p + theme_minimal() +
+	theme(axis.text.x=element_text(angle=90),
+		  legend.title=element_blank()) +
+	xlab('') +
+	ylab('Average delay (minutes)')
+	
+p
+
+```
+
+***
+To make this chart, we first create a table in which each row is the average delay for a given month. Each month has two rows: one for departure delay and one for arrival delay. 
+
+You can add multiple geoms according to the same aesthetics. In this example, adding `geom_path()` with just `x` and `y` aesthetics specified turns out to be a "bad recipe": we need to add an additional aesthetic `group` before the plot makes sense. 
+
+
+### Distance travelled is consistent over the course of the year, but varies substantially by carrier. 
+
+```{r prep_boxplot}
+
+boxplot_data <- flights %>% 
+	group_by(carrier) %>% 
+	filter(n() > 10000) %>% 
+	mutate(month = month.name[month],
+		   month = factor(month, levels = month.name)) 
+
+```
+
+
+```{r make_boxplot, fig.width=10}
+
+p <- boxplot_data %>% 
+	ggplot() +
+	aes(x = month, y = distance) + 
+	geom_boxplot() +
+	facet_wrap(~carrier)  
+
+# feel free to uncomment the code below to make a few visual tweaks
+p <- p + theme_minimal() +
+	theme(axis.text.x=element_text(angle=90),
+		  legend.title=element_blank()) +
+	xlab('') +
+	ylab('Distance (km') +
+	aes(fill = month) +
+	scale_fill_discrete(guide = FALSE)
+	
+p
+	
+```
+
+
+***
+Boxplots are a nice way to visualize distributions, which are relevant when you care not just about the average but variation around that average. 
+
+Easy *faceting* is one of `ggplot2`'s killer features. With just one line, you can implement a "small multiples" visualization, in which the same kind of chart is repeated for different conditions of a categorical variable. 
