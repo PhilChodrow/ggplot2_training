@@ -92,7 +92,7 @@ valueBox(value = paste0(on_time$carrier, ': ', round(on_time$delay,1), ' min lat
 
 ```
 
-### Customer Experience
+### Cool note! 
 
 The first code block creates a summary table in which the Origin column gives the NY airport of departure, the Destination column gives the destination airport, and Number of Departing Flights is exactly what you'd expect. All the operations used there are from `dplyr` and `tidyr`. 
 

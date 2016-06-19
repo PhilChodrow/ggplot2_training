@@ -159,6 +159,9 @@ aes(color = carrier) # add a new aes
 ```
 
 
+# Aesthetics and Geometries
+
+
 ## Aesthetics and Geometries
 
 In the grammer of English, there are lots of grammatically correct combinations, but not all of them make sense. 
@@ -169,7 +172,7 @@ In the grammer of English, there are lots of grammatically correct combinations,
 
 Same deal in the grammar of graphics. 
 
-## Aesthetics
+## Aesthetics and Geometries
 
 ```{r}
 p <- ggplot(data) + aes(x = carrier, y = distance, color = carrier) 
@@ -213,6 +216,8 @@ p + geom_point(alpha = .3) # Now geom_point() makes a lot more sense!
 # Setting alpha adds transparency.
 ###</b>
 ```
+
+# Diving in
 
 ## Exercise 1
 
@@ -267,7 +272,7 @@ ggplot(data) + # initialize plot: nothing on it.
 
 ## Small multiples example: one variable
 
-```{r, fig.height = 4}
+```{r, fig.height = 3.5}
 
 ggplot(data) + # initialize plot: nothing on it. 
 	aes(x = distance, y = air_time) + # x axis will have distance, etc. 
@@ -280,7 +285,7 @@ ggplot(data) + # initialize plot: nothing on it.
 
 ## Small multiples example: two variables
 
-```{r, fig.height = 4}
+```{r, fig.height = 3.5}
 
 ggplot(data) + # initialize plot: nothing on it. 
 	aes(x = distance, y = air_time) + # x axis will have distance, etc. 
@@ -326,7 +331,7 @@ Find the code chunk `make_boxplot` and run the code up to it. Peak at `boxplot_d
 
 If `ggplot2` isn't giving you the plot structure that you want, it's easy to assume that you have a **data visualization problem**. 
 
-In fact, it is likely that your problem is  actually  a **data manipulation problem**. Example:  
+In fact, it is likely that your problem is a **data manipulation problem**. Example:  
 
 ```{r echo = FALSE}
 data <- flights %>% group_by(carrier, origin) %>%
